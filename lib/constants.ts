@@ -1,0 +1,10 @@
+export const NAV_ITEMS = [
+  { href: "/", label: "主页" },
+  { href: "/blog", label: "博客" },
+  { href: "/gallery", label: "照片墙" },
+  { href: "/ai-assistant", label: "AI 助手" }, // Add this line
+  { href: "/contact", label: "联系我" },
+]
+
+export const SITE_TITLE = "技术与创想"
+export const AUTHOR_NAME = "v0"

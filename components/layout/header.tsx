@@ -1,0 +1,78 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Code2, Menu, X } from "lucide-react"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
+import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { NAV_ITEMS, SITE_TITLE } from "@/lib/constants"
+
+export function Header() {
+  const pathname = usePathname()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center space-x-2.5 group">
+          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground group-hover:scale-110 transition-transform">
+            <Code2 className="h-5 w-5" />
+          </div>
+          <span className="font-sans font-bold text-xl text-foreground">{SITE_TITLE}</span>
+        </Link>
+
+        <nav className="hidden md:flex items-center space-x-6">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "relative text-sm font-medium transition-colors hover:text-primary",
+                pathname === item.href ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              {item.label}
+              {pathname === item.href && (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary" />
+              )}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center space-x-2">
+          <ThemeToggle />
+          <div className="md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <span className="sr-only">切换菜单</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {isMenuOpen && (
+        <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/40">
+          <nav className="flex flex-col space-y-1 p-4">
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMenuOpen(false)}
+                className={cn(
+                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname === item.href
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-accent-foreground hover:bg-accent/50",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
+    </header>
+  )
+}
