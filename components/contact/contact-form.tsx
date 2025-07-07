@@ -56,12 +56,12 @@ export function ContactForm() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="subject">主题</Label>
-            <Input id="subject" name="subject" placeholder="消息主题" />
+            <Label htmlFor="theme">主题</Label>
+            <Input id="theme" name="theme" placeholder="消息主题" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="message">内容</Label>
-            <Textarea id="message" name="message" placeholder="请在此输入您的消息..." rows={5} required />
+            <Label htmlFor="context">内容</Label>
+            <Textarea id="context" name="context" placeholder="请在此输入您的消息..." rows={5} required />
           </div>
           <Button type="submit" size="lg" className="w-full group" disabled={isPending}>
             {isPending ? "发送中..." : "发送消息"}
