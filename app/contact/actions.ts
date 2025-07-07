@@ -1,6 +1,7 @@
 "use server"
 
 import type { ContactFormState } from "@/lib/types"
+import { API_CONFIG } from "@/lib/config"
 
 export async function submitContactForm(prevState: ContactFormState, formData: FormData): Promise<ContactFormState> {
   const name = formData.get("name")
@@ -17,7 +18,7 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
   }
 
   try {
-    const response = await fetch('http://localhost:8000/v1/contacts', {
+    const response = await fetch(API_CONFIG.CONTACT_API_URL, {
       method: 'POST',
       headers: {
         'accept': 'application/json',
