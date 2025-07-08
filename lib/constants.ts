@@ -4,6 +4,7 @@ export const NAV_ITEMS = [
   { href: "/gallery", label: "照片墙" },
   { href: "/ai-assistant", label: "AI 助手" }, // Add this line
   { href: "/contact", label: "联系我" },
+  { href: "/contact-details", label: "联系详情" },
 ]
 
 export const SITE_TITLE = "技术与创想"
