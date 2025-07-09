@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+import { LoginDialog } from '@/components/auth/login-dialog'
 
-import { Loader2, Mail, User, MessageSquare, Calendar, Search, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, Mail, User, MessageSquare, Calendar, Search, X, Trash2, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 
 interface ContactItem {
   id: number
@@ -42,6 +43,8 @@ export default function ContactDetailsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
 
   const fetchContacts = async (page: number = 1, search: string = '') => {
     try {
@@ -75,9 +78,39 @@ export default function ContactDetailsPage() {
     }
   }
 
+  // 检查登录状态
   useEffect(() => {
-    fetchContacts(1, searchQuery)
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem('access_token')
+      const userInfoStr = localStorage.getItem('user_info')
+      
+      if (token && userInfoStr) {
+        try {
+          const user = JSON.parse(userInfoStr)
+          setIsLoggedIn(true)
+        } catch (error) {
+          // 清除无效的存储数据
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('user_info')
+          setIsLoggedIn(false)
+        }
+      } else {
+        setIsLoggedIn(false)
+      }
+      setCheckingAuth(false)
+    }
+    
+    checkLoginStatus()
   }, [])
+
+  // 只有在登录状态确认且用户已登录时才获取联系信息
+  useEffect(() => {
+    if (!checkingAuth && isLoggedIn) {
+      fetchContacts(1, searchQuery)
+    } else if (!checkingAuth && !isLoggedIn) {
+      setLoading(false)
+    }
+  }, [checkingAuth, isLoggedIn])
 
   const handleSearch = () => {
     setIsSearching(true)
@@ -186,13 +219,39 @@ export default function ContactDetailsPage() {
     })
   }
 
-  if (loading) {
+  if (checkingAuth || loading) {
     return (
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex items-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-lg text-primary">加载中...</span>
+            <span className="text-lg text-primary">{checkingAuth ? '验证登录状态...' : '加载中...'}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 如果用户未登录，显示登录提示页面
+  if (!isLoggedIn) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Lock className="h-12 w-12 text-primary" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-primary">需要登录访问</h1>
+              <p className="text-muted-foreground max-w-md">
+                联系详情页面需要管理员权限才能访问。请先登录您的账户。
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <LoginDialog />
+            </div>
           </div>
         </div>
       </div>

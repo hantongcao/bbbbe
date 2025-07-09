@@ -1,5 +1,11 @@
 // API Configuration
 export const API_CONFIG = {
+  // Base API URL
+  API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:8000/v1',
+  
+  // Auth API
+  AUTH_API_URL: process.env.AUTH_API_URL || 'http://localhost:8000/v1/auth',
+  
   // Contact API
   CONTACT_API_URL: process.env.CONTACT_API_URL || 'http://localhost:8000/v1/contacts',
   

@@ -37,3 +37,21 @@ export type ContactFormState = {
   message: string
   status: "success" | "error" | "idle"
 }
+
+export type LoginFormState = {
+  message: string
+  status: "idle" | "success" | "error"
+  data?: {
+    access_token: string
+    token_type: string
+    user: {
+      username: string
+      is_admin: boolean
+      full_name: string
+      require_password_change: boolean
+      id: number
+      created_at: string
+      updated_at: string
+    }
+  }
+}

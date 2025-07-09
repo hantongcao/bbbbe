@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useActionState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -14,85 +14,48 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LogIn, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { loginUser } from "@/app/auth/actions"
+import type { LoginFormState } from "@/lib/types"
 
-interface LoginResponse {
-  access_token: string
-  token_type: string
-  user: {
-    username: string
-    is_admin: boolean
-    full_name: string
-    require_password_change: boolean
-    id: number
-    created_at: string
-    updated_at: string
-  }
+const initialState: LoginFormState = {
+  message: "",
+  status: "idle",
 }
 
 export function LoginDialog() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [userInfo, setUserInfo] = useState<LoginResponse['user'] | null>(null)
+  const [userInfo, setUserInfo] = useState<LoginFormState['data']['user'] | null>(null)
+  const [state, formAction, isPending] = useActionState(loginUser, initialState)
   const { toast } = useToast()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('http://localhost:8000/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
+  // 处理登录状态变化
+  useEffect(() => {
+    if (state.status === "success" && state.data) {
+      setIsLoggedIn(true)
+      setUserInfo(state.data.user)
+      setIsOpen(false)
+      
+      // 存储token到localStorage
+      localStorage.setItem('access_token', state.data.access_token)
+      localStorage.setItem('user_info', JSON.stringify(state.data.user))
+      
+      toast({
+        title: "登录成功",
+        description: state.message,
       })
-
-      if (response.ok) {
-        const data: LoginResponse = await response.json()
-        setIsLoggedIn(true)
-        setUserInfo(data.user)
-        setIsOpen(false)
-        
-        // 存储token到localStorage
-        localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('user_info', JSON.stringify(data.user))
-        
-        toast({
-          title: "登录成功",
-          description: `欢迎回来，${data.user.full_name || data.user.username}！`,
-        })
-      } else {
-        const errorData = await response.json()
-        toast({
-          title: "登录失败",
-          description: errorData.detail || "用户名或密码错误",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
+    } else if (state.status === "error") {
       toast({
         title: "登录失败",
-        description: "网络错误，请检查服务器连接",
+        description: state.message,
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [state, toast])
 
   const handleLogout = () => {
     setIsLoggedIn(false)
     setUserInfo(null)
-    setUsername("")
-    setPassword("")
     localStorage.removeItem('access_token')
     localStorage.removeItem('user_info')
     
@@ -149,14 +112,13 @@ export function LoginDialog() {
             请输入您的用户名和密码进行登录
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="username">用户名</Label>
             <Input
               id="username"
+              name="username"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入用户名"
               required
             />
@@ -165,16 +127,20 @@ export function LoginDialog() {
             <Label htmlFor="password">密码</Label>
             <Input
               id="password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码"
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "登录中..." : "登录"}
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? "登录中..." : "登录"}
           </Button>
+          {state.status !== "idle" && state.status === "error" && (
+            <p className="text-sm text-center text-destructive">
+              {state.message}
+            </p>
+          )}
         </form>
       </DialogContent>
     </Dialog>
