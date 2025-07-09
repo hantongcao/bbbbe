@@ -4,10 +4,25 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Code2, Menu, X } from "lucide-react"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
+import { LoginDialog } from "@/components/auth/login-dialog"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { NAV_ITEMS, SITE_TITLE } from "@/lib/constants"
+import { SITE_TITLE } from "@/lib/constants"
+
+const NAV_ITEMS = [
+  { href: "/", label: "主页" },
+  { href: "/blog", label: "博客" },
+  { href: "/gallery", label: "照片墙" },
+  { href: "/ai-assistant", label: "AI 助手" },
+  { href: "/contact", label: "联系我" },
+  { href: "/contact-details", label: "联系详情" },
+]
+
+type NavItem = {
+  href: string
+  label: string
+}
 
 export function Header() {
   const pathname = usePathname()
@@ -24,7 +39,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.map((item: NavItem) => (
             <Link
               key={item.href}
               href={item.href}
@@ -42,6 +57,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center space-x-2">
+          <LoginDialog />
           <ThemeToggle />
           <div className="md:hidden">
             <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -55,7 +71,7 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/40">
           <nav className="flex flex-col space-y-1 p-4">
-            {NAV_ITEMS.map((item) => (
+            {NAV_ITEMS.map((item: NavItem) => (
               <Link
                 key={item.href}
                 href={item.href}

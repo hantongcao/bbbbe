@@ -6,6 +6,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
+import { Toaster } from "@/components/ui/toaster"
 
 const notoSansSC = Noto_Sans_SC({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function ClientLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <Toaster />
         </ThemeProvider>
       </BodyClassManager>
     </html>

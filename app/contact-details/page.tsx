@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
 
-import { Loader2, Mail, User, MessageSquare, Calendar, Search, X, Trash2 } from 'lucide-react'
+import { Loader2, Mail, User, MessageSquare, Calendar, Search, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ContactItem {
   id: number
@@ -282,15 +282,12 @@ export default function ContactDetailsPage() {
                     {contact.name}
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      ID: {contact.id}
-                    </Badge>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                          className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10 border-primary/20 hover:border-primary/30 transition-colors"
                           disabled={deletingId === contact.id}
                         >
                           {deletingId === contact.id ? (
@@ -312,9 +309,14 @@ export default function ContactDetailsPage() {
                           <AlertDialogCancel>取消</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(contact.id)}
-                            className="bg-red-600 hover:bg-red-700"
+                            disabled={deletingId === contact.id}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                           >
-                            删除
+                            {deletingId === contact.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              '确认删除'
+                            )}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -325,7 +327,7 @@ export default function ContactDetailsPage() {
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <Mail className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">邮箱:</span>
                     <a 
                       href={`mailto:${contact.email}`}
@@ -335,9 +337,9 @@ export default function ContactDetailsPage() {
                     </a>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">时间:</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-primary">
                       {formatDate(contact.created_at)}
                     </span>
                   </div>
@@ -365,23 +367,31 @@ export default function ContactDetailsPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-          <PaginationPrevious 
+          <PaginationLink
             onClick={() => handlePageChange(pagination.page - 1)}
-            className={`cursor-pointer transition-colors ${
+            className={`cursor-pointer transition-colors gap-1 pl-2.5 ${
               pagination.page === 1 ? 'pointer-events-none opacity-50' : 'hover:bg-primary/10 hover:text-primary'
             }`}
-          />
+            size="default"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>上一页</span>
+          </PaginationLink>
         </PaginationItem>
                 
                 {renderPaginationItems()}
                 
                 <PaginationItem>
-          <PaginationNext 
+          <PaginationLink
             onClick={() => handlePageChange(pagination.page + 1)}
-            className={`cursor-pointer transition-colors ${
+            className={`cursor-pointer transition-colors gap-1 pr-2.5 ${
               pagination.page === pagination.totalPage ? 'pointer-events-none opacity-50' : 'hover:bg-primary/10 hover:text-primary'
             }`}
-          />
+            size="default"
+          >
+            <span>下一页</span>
+            <ChevronRight className="h-4 w-4" />
+          </PaginationLink>
         </PaginationItem>
               </PaginationContent>
             </Pagination>
