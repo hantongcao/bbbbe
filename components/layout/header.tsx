@@ -5,28 +5,34 @@ import { usePathname } from "next/navigation"
 import { Code2, Menu, X } from "lucide-react"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { LoginDialog } from "@/components/auth/login-dialog"
+import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { SITE_TITLE } from "@/lib/constants"
 
 const NAV_ITEMS = [
-  { href: "/", label: "主页" },
-  { href: "/blog", label: "博客" },
-  { href: "/gallery", label: "照片墙" },
-  { href: "/ai-assistant", label: "AI 助手" },
-  { href: "/contact", label: "联系我" },
-  { href: "/contact-details", label: "联系详情" },
+  { href: "/", label: "主页", requireAuth: false },
+  { href: "/blog", label: "博客", requireAuth: false },
+  { href: "/gallery", label: "照片墙", requireAuth: false },
+  { href: "/ai-assistant", label: "AI 助手", requireAuth: false },
+  { href: "/contact", label: "联系我", requireAuth: false },
+  { href: "/contact-details", label: "联系详情", requireAuth: true },
 ]
 
 type NavItem = {
   href: string
   label: string
+  requireAuth: boolean
 }
 
 export function Header() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { isLoggedIn } = useAuth()
+
+  // 根据登录状态过滤导航项
+  const filteredNavItems = NAV_ITEMS.filter(item => !item.requireAuth || isLoggedIn)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
@@ -39,7 +45,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
-          {NAV_ITEMS.map((item: NavItem) => (
+          {filteredNavItems.map((item: NavItem) => (
             <Link
               key={item.href}
               href={item.href}
@@ -71,7 +77,7 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/40">
           <nav className="flex flex-col space-y-1 p-4">
-            {NAV_ITEMS.map((item: NavItem) => (
+            {filteredNavItems.map((item: NavItem) => (
               <Link
                 key={item.href}
                 href={item.href}

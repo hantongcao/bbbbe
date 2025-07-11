@@ -49,46 +49,55 @@ export function Footer() {
               {/* 微信图标 */}
               <button 
                 onClick={() => handleSocialClick('wechat')} 
-                className="opacity-70 hover:opacity-100 transition-opacity" 
+                className="opacity-70 hover:opacity-100 transition-all duration-200 text-muted-foreground hover:text-foreground" 
                 aria-label="微信"
               >
-                <Image
-                  src="/icon/wechat.svg"
-                  alt="微信"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 filter brightness-0 dark:brightness-100"
-                />
+                <div className="w-6 h-6 bg-current" style={{
+                  maskImage: 'url(/icon/wechat.svg)',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  maskSize: 'contain',
+                  WebkitMaskImage: 'url(/icon/wechat.svg)',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskSize: 'contain'
+                }} />
               </button>
               
               {/* QQ图标 */}
               <button 
                 onClick={() => handleSocialClick('qq')} 
-                className="opacity-70 hover:opacity-100 transition-opacity" 
+                className="opacity-70 hover:opacity-100 transition-all duration-200 text-muted-foreground hover:text-foreground" 
                 aria-label="QQ"
               >
-                <Image
-                  src="/icon/qq.svg"
-                  alt="QQ"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 filter brightness-0 dark:brightness-100"
-                />
+                <div className="w-6 h-6 bg-current" style={{
+                  maskImage: 'url(/icon/qq.svg)',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  maskSize: 'contain',
+                  WebkitMaskImage: 'url(/icon/qq.svg)',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskSize: 'contain'
+                }} />
               </button>
               
               {/* CSDN图标 */}
               <button 
                 onClick={() => handleSocialClick('csdn')} 
-                className="opacity-70 hover:opacity-100 transition-opacity" 
+                className="opacity-70 hover:opacity-100 transition-all duration-200 text-muted-foreground hover:text-foreground" 
                 aria-label="CSDN"
               >
-                <Image
-                  src="/icon/csdn.svg"
-                  alt="CSDN"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 filter brightness-0 dark:brightness-100"
-                />
+                <div className="w-6 h-6 bg-current" style={{
+                  maskImage: 'url(/icon/csdn.svg)',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  maskSize: 'contain',
+                  WebkitMaskImage: 'url(/icon/csdn.svg)',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskSize: 'contain'
+                }} />
               </button>
             </div>
           </div>
