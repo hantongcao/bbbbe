@@ -9,6 +9,9 @@ export const API_CONFIG = {
   // Contact API
   CONTACT_API_URL: process.env.CONTACT_API_URL || 'http://localhost:8000/v1/contacts',
   
+  // Photos API
+  PHOTOS_API_URL: process.env.PHOTOS_API_URL || 'http://localhost:8000/v1/photos',
+  
   // Chat API (Eazytec)
   EAZYTEC_API_KEY: process.env.EAZYTEC_API_KEY || 'eazytec_25abefe91013adef_9e8e77041a87c925de10acf21040f6c8',
   EAZYTEC_BASE_URL: process.env.EAZYTEC_BASE_URL || 'https://maas.eazytec-cloud.com/v1',

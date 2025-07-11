@@ -17,7 +17,10 @@ export type GalleryPost = {
   src: string
   alt: string
   title: string
+  description: string
+  location_name: string
   tags: string[]
+  category: string
   content: string
 }
 
@@ -54,4 +57,9 @@ export type LoginFormState = {
       updated_at: string
     }
   }
+}
+
+export type PhotoUploadState = {
+  message: string
+  status: "success" | "error" | "idle"
 }

@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/", label: "主页", requireAuth: false },
   { href: "/blog", label: "博客", requireAuth: false },
   { href: "/gallery", label: "照片墙", requireAuth: false },
+  { href: "/photo-upload", label: "照片上传", requireAuth: true },
   { href: "/ai-assistant", label: "AI 助手", requireAuth: false },
   { href: "/contact", label: "联系我", requireAuth: false },
   { href: "/contact-details", label: "联系详情", requireAuth: true },
