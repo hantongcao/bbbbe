@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { GalleryPost } from "@/lib/types"
 
+// 分类映射
+import { CATEGORY_LABELS } from "@/lib/photo-constants"
+
 interface GalleryLightboxProps {
   post: GalleryPost
   onClose: () => void
@@ -37,7 +40,7 @@ export function GalleryLightbox({ post, onClose }: GalleryLightboxProps) {
             <div className="flex items-center gap-2">
               <FolderOpen className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">分类:</span>
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">{post.category}</Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">{CATEGORY_LABELS[post.category] || post.category}</Badge>
             </div>
           </div>
           

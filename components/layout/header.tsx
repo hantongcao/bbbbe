@@ -12,28 +12,37 @@ import { Button } from "@/components/ui/button"
 import { SITE_TITLE } from "@/lib/constants"
 
 const NAV_ITEMS = [
-  { href: "/", label: "主页", requireAuth: false },
-  { href: "/blog", label: "博客", requireAuth: false },
-  { href: "/gallery", label: "照片墙", requireAuth: false },
-  { href: "/photo-upload", label: "照片上传", requireAuth: true },
-  { href: "/ai-assistant", label: "AI 助手", requireAuth: false },
-  { href: "/contact", label: "联系我", requireAuth: false },
-  { href: "/contact-details", label: "联系详情", requireAuth: true },
+  { href: "/", label: "主页", requireAuth: false, requireAdmin: false },
+  { href: "/blog", label: "博客", requireAuth: false, requireAdmin: false },
+  { href: "/gallery", label: "照片墙", requireAuth: false, requireAdmin: false },
+  { href: "/photo-upload", label: "照片上传", requireAuth: true, requireAdmin: true },
+  { href: "/ai-assistant", label: "AI 助手", requireAuth: false, requireAdmin: false },
+  { href: "/contact", label: "联系我", requireAuth: false, requireAdmin: false },
+  { href: "/contact-details", label: "联系详情", requireAuth: true, requireAdmin: true },
 ]
 
 type NavItem = {
   href: string
   label: string
   requireAuth: boolean
+  requireAdmin: boolean
 }
 
 export function Header() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, userInfo } = useAuth()
 
-  // 根据登录状态过滤导航项
-  const filteredNavItems = NAV_ITEMS.filter(item => !item.requireAuth || isLoggedIn)
+  // 根据登录状态和管理员权限过滤导航项
+  const filteredNavItems = NAV_ITEMS.filter(item => {
+    if (item.requireAdmin) {
+      return isLoggedIn && userInfo?.is_admin
+    }
+    if (item.requireAuth) {
+      return isLoggedIn
+    }
+    return true
+  })
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">

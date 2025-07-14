@@ -22,8 +22,25 @@ export async function submitPhotoData(
   const status = formData.get("status")
   const locationName = formData.get("location_name")
   const visibility = formData.get("visibility")
+  const authToken = formData.get("authToken")
+  const userIsAdmin = formData.get("userIsAdmin")
 
   console.log("Extracted values:", { title, description, category, tags, fileUrl, fileFormat, status, locationName, visibility })
+
+  // 权限检查 - 仅限管理员
+  if (!authToken) {
+    return {
+      message: "需要登录才能上传照片。",
+      status: "error",
+    }
+  }
+
+  if (userIsAdmin !== "true") {
+    return {
+      message: "只有管理员才能上传照片。",
+      status: "error",
+    }
+  }
 
   // Basic validation
   if (!title || !category || !fileUrl) {

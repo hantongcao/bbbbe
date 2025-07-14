@@ -1,15 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { PhotoUploadForm } from "@/components/photo/photo-upload-form"
+import { useRouter, useParams } from "next/navigation"
+import { PhotoEditForm } from "@/components/photo/photo-edit-form"
 import { PageHeader } from "@/components/shared/page-header"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent } from "@/components/ui/card"
-import { AlertTriangle, Lock } from "lucide-react"
+import { Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function PhotoUploadPage() {
+export default function PhotoEditPage() {
+  const params = useParams()
+  const photoId = params.id as string
   const { isLoggedIn, userInfo, isLoading } = useAuth()
   const router = useRouter()
   const [showContent, setShowContent] = useState(false)
@@ -61,7 +63,7 @@ export default function PhotoUploadPage() {
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">访问受限</h3>
                 <p className="text-muted-foreground">
-                  照片上传功能仅限管理员使用。如需上传照片，请联系管理员获取相应权限。
+                  照片编辑功能仅限管理员使用。如需编辑照片，请联系管理员获取相应权限。
                 </p>
               </div>
               <Button 
@@ -85,11 +87,11 @@ export default function PhotoUploadPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <PageHeader
-        title="照片上传"
-        description="上传您的精彩照片，分享美好时刻"
+        title="编辑照片"
+        description="修改照片信息和设置"
       />
       <div className="mt-8">
-        <PhotoUploadForm />
+        <PhotoEditForm photoId={photoId} />
       </div>
     </div>
   )

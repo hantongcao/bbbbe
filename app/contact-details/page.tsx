@@ -44,6 +44,7 @@ export default function ContactDetailsPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
   const fetchContacts = async (page: number = 1, search: string = '') => {
@@ -78,7 +79,7 @@ export default function ContactDetailsPage() {
     }
   }
 
-  // 检查登录状态
+  // 检查登录状态和管理员权限
   useEffect(() => {
     const checkLoginStatus = () => {
       const token = localStorage.getItem('access_token')
@@ -88,14 +89,17 @@ export default function ContactDetailsPage() {
         try {
           const user = JSON.parse(userInfoStr)
           setIsLoggedIn(true)
+          setIsAdmin(user.is_admin === true)
         } catch (error) {
           // 清除无效的存储数据
           localStorage.removeItem('access_token')
           localStorage.removeItem('user_info')
           setIsLoggedIn(false)
+          setIsAdmin(false)
         }
       } else {
         setIsLoggedIn(false)
+        setIsAdmin(false)
       }
       setCheckingAuth(false)
     }
@@ -103,14 +107,14 @@ export default function ContactDetailsPage() {
     checkLoginStatus()
   }, [])
 
-  // 只有在登录状态确认且用户已登录时才获取联系信息
+  // 只有在登录状态确认且用户已登录且是管理员时才获取联系信息
   useEffect(() => {
-    if (!checkingAuth && isLoggedIn) {
+    if (!checkingAuth && isLoggedIn && isAdmin) {
       fetchContacts(1, searchQuery)
-    } else if (!checkingAuth && !isLoggedIn) {
+    } else if (!checkingAuth && (!isLoggedIn || !isAdmin)) {
       setLoading(false)
     }
-  }, [checkingAuth, isLoggedIn])
+  }, [checkingAuth, isLoggedIn, isAdmin])
 
   const handleSearch = () => {
     setIsSearching(true)
@@ -133,10 +137,12 @@ export default function ContactDetailsPage() {
     try {
       setDeletingId(id)
       
+      const token = localStorage.getItem('access_token')
       const response = await fetch(`/api/contacts/${id}`, {
         method: 'DELETE',
         headers: {
           'accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       })
       
@@ -232,8 +238,8 @@ export default function ContactDetailsPage() {
     )
   }
 
-  // 如果用户未登录，显示登录提示页面
-  if (!isLoggedIn) {
+  // 如果用户未登录或不是管理员，显示权限提示页面
+  if (!isLoggedIn || !isAdmin) {
     return (
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -244,14 +250,21 @@ export default function ContactDetailsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-primary">需要登录访问</h1>
+              <h1 className="text-2xl font-bold text-primary">
+                {!isLoggedIn ? '需要登录访问' : '需要管理员权限'}
+              </h1>
               <p className="text-muted-foreground max-w-md">
-                联系详情页面需要管理员权限才能访问。请先登录您的账户。
+                {!isLoggedIn 
+                  ? '联系详情页面需要管理员权限才能访问。请先登录您的账户。'
+                  : '此页面仅限管理员访问。如果您认为这是错误，请联系系统管理员。'
+                }
               </p>
             </div>
-            <div className="flex justify-center">
-              <LoginDialog />
-            </div>
+            {!isLoggedIn && (
+              <div className="flex justify-center">
+                <LoginDialog />
+              </div>
+            )}
           </div>
         </div>
       </div>

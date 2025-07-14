@@ -134,8 +134,7 @@ export function LoginDialog() {
               </div>
               <div className="hidden sm:flex flex-col items-start">
                 <span className="text-sm font-medium leading-none">{displayName}</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  {userInfo.is_admin && <Shield className="h-3 w-3" />}
+                <span className="text-xs text-muted-foreground">
                   {userInfo.is_admin ? '管理员' : '用户'}
                 </span>
               </div>

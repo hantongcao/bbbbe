@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef, useActionState, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useFormState } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,11 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Upload, X, Plus, Image as ImageIcon, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 import Image from "next/image"
 import { submitPhotoData } from "@/app/photo-upload/actions"
 import type { PhotoUploadState } from "@/lib/types"
 
-const PHOTO_CATEGORIES = ["自拍", "日常", "人像", "风景", "艺术"]
+import { PHOTO_CATEGORIES } from "@/lib/photo-constants"
 
 // 内容状态枚举
 export type ContentStatus = "draft" | "published" | "private" | "archived" | "deleted"
@@ -64,12 +66,15 @@ export function PhotoUploadForm() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const { toast } = useToast()
+  const { userInfo } = useAuth()
   
-  const [state, formAction, isPending] = useActionState(submitPhotoData, initialState)
+  const [state, formAction] = useFormState(submitPhotoData, initialState)
+  const [isPending, setIsPending] = useState(false)
   
   // 处理Server Action的结果
   useEffect(() => {
     if (state.status === "success") {
+      setIsPending(false)
       toast({
         title: "上传成功",
         description: state.message,
@@ -94,6 +99,7 @@ export function PhotoUploadForm() {
       }
       formRef.current?.reset()
     } else if (state.status === "error") {
+      setIsPending(false)
       toast({
         title: "上传失败",
         description: state.message,
@@ -168,8 +174,12 @@ export function PhotoUploadForm() {
       const uploadFormData = new FormData()
       uploadFormData.append('file', photoData.file)
       
+      const token = localStorage.getItem('access_token')
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: uploadFormData,
       })
 
@@ -216,9 +226,13 @@ export function PhotoUploadForm() {
       return
     }
     
-    // 创建FormData并调用Server Action
-    const formData = new FormData(event.currentTarget)
-    formAction(formData)
+    setIsPending(true)
+    try {
+      const formData = new FormData(event.currentTarget)
+      formAction(formData)
+    } finally {
+      // isPending will be reset when state changes in useEffect
+    }
   }
 
   return (
@@ -236,6 +250,8 @@ export function PhotoUploadForm() {
           <input type="hidden" name="status" value={photoData.status || 'draft'} />
           <input type="hidden" name="location_name" value={photoData.location_name || ''} />
           <input type="hidden" name="visibility" value={photoData.visibility || 'public'} />
+          <input type="hidden" name="authToken" value={typeof window !== 'undefined' ? localStorage.getItem('access_token') || '' : ''} />
+          <input type="hidden" name="userIsAdmin" value={userInfo?.is_admin ? 'true' : 'false'} />
           {uploadedFileUrl && (
             <>
               <input type="hidden" name="fileUrl" value={uploadedFileUrl} />
@@ -335,8 +351,8 @@ export function PhotoUploadForm() {
               </SelectTrigger>
               <SelectContent>
                 {PHOTO_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
                   </SelectItem>
                 ))}
               </SelectContent>

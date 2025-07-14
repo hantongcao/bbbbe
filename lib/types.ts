@@ -22,6 +22,7 @@ export type GalleryPost = {
   tags: string[]
   category: string
   content: string
+  user_id?: number
 }
 
 export type ContactInfo = {
