@@ -3,7 +3,12 @@ import type { GalleryPost } from "@/lib/types"
 export const ALL_GALLERY_POSTS: GalleryPost[] = [
   {
     id: 1,
-    src: "/uploads/mountain-sunrise.jpg",
+    src: "/uploads/1752221555020_2o83uwvesdn.jpg",
+    srcList: [
+      "/uploads/1752221555020_2o83uwvesdn.jpg",
+      "/uploads/1752222462043_6bogv6dh8e4.jpg",
+      "/uploads/1752223458267_3h3j38yos7f.jpg"
+    ],
     alt: "山峰日出",
     title: "绯红山峰的日出",
     description: "清晨时分，站在海拔3000米的山峰上，见证第一缕阳光穿透云层的壮丽瞬间。",
@@ -14,7 +19,11 @@ export const ALL_GALLERY_POSTS: GalleryPost[] = [
   },
   {
     id: 2,
-    src: "/uploads/city-night.jpg",
+    src: "/uploads/1752225146365_a805thh3gc.png",
+    srcList: [
+      "/uploads/1752225146365_a805thh3gc.png",
+      "/uploads/1752225532429_lhe56rc3b7o.jpg"
+    ],
     alt: "城市夜景",
     title: "蔚蓝都市的午夜",
     description: "从摩天大楼顶层俯瞰，城市夜晚的灯火如星河般璀璨夺目。",
@@ -25,7 +34,7 @@ export const ALL_GALLERY_POSTS: GalleryPost[] = [
   },
   {
     id: 3,
-    src: "/uploads/portrait-rose.jpg",
+    src: "/uploads/1752456302891_whm4yx1vtgq.jpg",
     alt: "人像摄影",
     title: "玫瑰色调的沉思",
     description: "在温暖的玫瑰金光线下，捕捉模特眼神中的深邃与沉思。",
@@ -36,7 +45,13 @@ export const ALL_GALLERY_POSTS: GalleryPost[] = [
   },
   {
     id: 4,
-    src: "/uploads/blue-alley.jpg",
+    src: "/uploads/1752456555771_4p54z9wgnnn.jpg",
+    srcList: [
+      "/uploads/1752456555771_4p54z9wgnnn.jpg",
+      "/uploads/1752456600259_rt01hr323xc.png",
+      "/uploads/1752473207199_r1i0vwit5ae.jpg",
+      "/uploads/1752473513627_icg4flqa80e.png"
+    ],
     alt: "街头摄影",
     title: "钴蓝小巷的邂逅",
     description: "在充满异域风情的蓝色小巷中，记录下匆匆过客的身影。",
@@ -47,7 +62,7 @@ export const ALL_GALLERY_POSTS: GalleryPost[] = [
   },
   {
     id: 5,
-    src: "/uploads/modern-tower.jpg",
+    src: "/uploads/1752473820425_qmflxikox4m.png",
     alt: "现代建筑",
     title: "品红高塔的几何",
     description: "现代建筑的几何美学，大胆的色彩与利落的线条完美融合。",
@@ -58,7 +73,11 @@ export const ALL_GALLERY_POSTS: GalleryPost[] = [
   },
   {
     id: 6,
-    src: "/uploads/light-trails.jpg",
+    src: "/uploads/1752546313401_9k5cig16u8m.png",
+    srcList: [
+      "/uploads/1752546313401_9k5cig16u8m.png",
+      "/uploads/1752546313418_o8r25x10um.jpg"
+    ],
     alt: "抽象艺术",
     title: "午夜流光",
     description: "通过长曝光技术，将城市灯光转化为抽象的艺术作品。",

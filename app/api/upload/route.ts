@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
   try {
     // 验证管理员权限
     const authHeader = request.headers.get('authorization')
+    console.log('Upload request - Auth header:', authHeader ? 'Present' : 'Missing')
+    
     if (!authHeader) {
+      console.log('Upload failed: No auth header')
       return NextResponse.json(
         { error: '需要登录才能上传文件' },
         { status: 401 }
@@ -36,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     const adminCheck = await verifyAdminPermission(authHeader)
     if (!adminCheck.isValid) {
+      console.log('Upload failed: Admin check failed:', adminCheck.error)
       return NextResponse.json(
         { error: adminCheck.error },
         { status: 403 }
@@ -44,8 +48,10 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
+    console.log('Upload request - File:', file ? `${file.name} (${file.type}, ${file.size} bytes)` : 'No file found')
     
     if (!file) {
+      console.log('Upload failed: No file in formData')
       return NextResponse.json(
         { error: '没有找到文件' },
         { status: 400 }

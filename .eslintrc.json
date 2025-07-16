@@ -1,7 +1,9 @@
 {
+  "parser": "@typescript-eslint/parser",
   "extends": [
     "next/core-web-vitals",
-    "next/typescript"
+    "next/typescript",
+    "@typescript-eslint/recommended"
   ],
   "rules": {
     // React 相关规则

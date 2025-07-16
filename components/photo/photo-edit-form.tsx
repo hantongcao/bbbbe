@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { X, Plus, Loader2, Save, ArrowLeft, AlertTriangle } from "lucide-react"
+import { X, Plus, Loader2, Save, ArrowLeft, AlertTriangle, ImageIcon, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import Image from "next/image"
 
 import { PHOTO_CATEGORIES } from "@/lib/photo-constants"
 
@@ -37,7 +38,7 @@ interface PhotoEditData {
   status: ContentStatus
   location_name: string
   visibility: Visibility
-  url: string
+  url_list: string[]
   user_id?: number
 }
 
@@ -51,6 +52,9 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isOfflineMode, setIsOfflineMode] = useState(false)
+  const [newFiles, setNewFiles] = useState<File[]>([])
+  const [newPreviews, setNewPreviews] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const router = useRouter()
   const { userInfo, isLoggedIn } = useAuth()
@@ -95,7 +99,7 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
           status: data.status || 'draft',
           location_name: data.location_name || '',
           visibility: data.visibility || 'public',
-          url: data.url || '',
+          url_list: data.url_list || [],
           user_id: data.user_id
         })
       } catch (error) {
@@ -141,7 +145,7 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
            status: 'draft',
            location_name: '',
            visibility: 'public',
-           url: '',
+           url_list: [],
            user_id: userInfo?.id || 0
          })
       } finally {
@@ -171,12 +175,144 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
     } : null)
   }
 
+  // 文件选择处理
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('文件选择事件触发')
+    const files = Array.from(e.target.files || [])
+    console.log('选择的文件数量:', files.length)
+    if (files.length > 0) {
+      console.log('开始处理选择的文件:', files.map(f => f.name))
+      processFiles(files)
+    } else {
+      console.log('没有选择文件')
+    }
+  }
+
+  // 拖拽处理
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      processFiles(files)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  // 处理文件
+  const processFiles = async (files: File[]) => {
+    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+    
+    if (imageFiles.length === 0) {
+      toast({
+        title: "文件格式错误",
+        description: "请选择图片文件",
+        variant: "destructive",
+        duration: 2000,
+      })
+      return
+    }
+
+    console.log('处理文件:', imageFiles.length, '个图片文件')
+    
+    // 先添加文件到状态
+    setNewFiles(prev => {
+      const updatedFiles = [...prev, ...imageFiles]
+      console.log('更新后的 newFiles:', updatedFiles.length, '个文件')
+      return updatedFiles
+    })
+
+    // 创建预览
+    const newPreviewUrls: string[] = []
+    const previewPromises = imageFiles.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            resolve(e.target.result as string)
+          }
+        }
+        reader.readAsDataURL(file)
+      })
+    })
+    
+    try {
+      const previews = await Promise.all(previewPromises)
+      setNewPreviews(prev => [...prev, ...previews])
+      console.log('预览创建完成:', previews.length, '个预览')
+    } catch (error) {
+      console.error('预览创建失败:', error)
+    }
+  }
+
+  // 删除现有图片
+  const removeExistingImage = (index: number) => {
+    setPhotoData(prev => prev ? {
+      ...prev,
+      url_list: prev.url_list.filter((_, i) => i !== index)
+    } : null)
+  }
+
+  // 删除新添加的图片
+  const removeNewImage = (index: number) => {
+    setNewFiles(prev => prev.filter((_, i) => i !== index))
+    setNewPreviews(prev => {
+      const newPrevs = prev.filter((_, i) => i !== index)
+      // 清理 URL 对象
+      if (prev[index] && prev[index].startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index])
+      }
+      return newPrevs
+    })
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
   const handleSave = async () => {
     if (!photoData) return
     
     setIsSaving(true)
     
     try {
+      let finalUrlList = [...photoData.url_list]
+      
+      // 如果有新文件需要上传
+      if (newFiles.length > 0) {
+        console.log('准备上传新文件:', newFiles.length, '个文件')
+        const token = localStorage.getItem('access_token')
+        const uploadedUrls: string[] = []
+        
+        // 逐个上传文件（与照片上传功能保持一致）
+        for (let i = 0; i < newFiles.length; i++) {
+          const file = newFiles[i]
+          console.log(`上传第${i + 1}个文件:`, file.name, file.type, file.size, 'bytes')
+          const uploadFormData = new FormData()
+          uploadFormData.append('file', file)
+          console.log('FormData 内容:', Array.from(uploadFormData.entries()))
+          
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: uploadFormData,
+          })
+
+          if (!uploadResponse.ok) {
+            throw new Error(`第${i + 1}个文件上传失败`)
+          }
+
+          const uploadResult = await uploadResponse.json()
+          uploadedUrls.push(uploadResult.url)
+        }
+        
+        finalUrlList = [...finalUrlList, ...uploadedUrls]
+      }
+      
       const token = localStorage.getItem('access_token')
       const response = await fetch(`/api/photos/${photoId}`, {
         method: 'PUT',
@@ -192,6 +328,7 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
           status: photoData.status,
           location_name: photoData.location_name,
           visibility: photoData.visibility,
+          url_list: finalUrlList,
         }),
       })
 
@@ -209,7 +346,7 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
       console.error('Save failed:', error)
       toast({
         title: "保存失败",
-        description: "请重试",
+        description: error instanceof Error ? error.message : "请重试",
         variant: "destructive",
         duration: 2000,
       })
@@ -264,6 +401,133 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
             </AlertDescription>
           </Alert>
         )}
+        
+        {/* 照片管理区域 */}
+        <div className="space-y-2">
+          <Label>照片管理</Label>
+          <div
+            className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {(photoData.url_list && photoData.url_list.length > 0) || newPreviews.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {/* 现有图片 */}
+                {photoData.url_list && photoData.url_list.map((url, index) => (
+                  <div key={`existing-${index}`} className="relative group">
+                    <Image
+                      src={url}
+                      alt={`${photoData.title} - 图片 ${index + 1}`}
+                      width={200}
+                      height={150}
+                      className="rounded-lg object-cover w-full h-32 border"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        target.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                    {/* 图片加载失败时的占位符 */}
+                    <div className="hidden absolute inset-0 flex items-center justify-center bg-muted rounded-lg border">
+                      <div className="text-center text-muted-foreground">
+                        <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">图片加载失败</p>
+                      </div>
+                    </div>
+                    {/* 删除按钮 */}
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeExistingImage(index)
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    {/* 图片序号 */}
+                    <div className="absolute top-1 left-1 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                      {index + 1}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* 新添加的图片 */}
+                {newPreviews.map((preview, index) => (
+                  <div key={`new-${index}`} className="relative group">
+                    <Image
+                      src={preview}
+                      alt={`新图片 ${index + 1}`}
+                      width={200}
+                      height={150}
+                      className="rounded-lg object-cover w-full h-32 border border-primary"
+                    />
+                    {/* 删除按钮 */}
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeNewImage(index)
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    {/* 新图片标识 */}
+                    <div className="absolute top-1 left-1 bg-primary text-white text-xs px-2 py-1 rounded">
+                      新 {index + 1}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* 添加更多照片的按钮 */}
+                <div 
+                  className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg h-32 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors bg-muted/20"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    fileInputRef.current?.click()
+                  }}
+                >
+                  <div className="text-center">
+                    <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">添加更多</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 text-center">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-lg font-medium">点击或拖拽上传照片（支持多选）</p>
+                  <p className="text-sm text-muted-foreground">支持 JPG、PNG、GIF 格式，可同时选择多张图片</p>
+                </div>
+              </div>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          {((photoData.url_list && photoData.url_list.length > 0) || newPreviews.length > 0) && (
+            <p className="text-sm text-muted-foreground">
+              现有图片: {photoData.url_list?.length || 0} 张
+              {newPreviews.length > 0 && (
+                <span className="text-primary ml-2">新增图片: {newPreviews.length} 张</span>
+              )}
+            </p>
+          )}
+        </div>
         
         {/* 标题 */}
         <div className="space-y-2">
@@ -331,7 +595,7 @@ export function PhotoEditForm({ photoId }: PhotoEditFormProps) {
           {photoData.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {photoData.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                <Badge key={index} variant="secondary" className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors">
                   {tag}
                   <button
                     type="button"

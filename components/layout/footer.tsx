@@ -28,22 +28,25 @@ export function Footer() {
               <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                 由 <span className="font-semibold text-primary">{AUTHOR_NAME}</span> 用 ❤️ 精心构建
               </p>
-              <p className="text-xs text-muted-foreground mt-1">&copy; {new Date().getFullYear()} 版权所有</p>
+              <p className="text-xs text-muted-foreground mt-1">&copy; 2024 版权所有</p>
             </div>
             <div className="flex items-center space-x-4">
               {/* 抖音图标 */}
               <button 
                 onClick={() => handleSocialClick('douyin')} 
-                className="opacity-70 hover:opacity-100 transition-opacity" 
+                className="opacity-70 hover:opacity-100 transition-all duration-200 text-muted-foreground hover:text-foreground" 
                 aria-label="抖音"
               >
-                <Image
-                  src="/icon/douyin.svg"
-                  alt="抖音"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6"
-                />
+                <div className="w-6 h-6 bg-current" style={{
+                  maskImage: 'url(/icon/douyin.svg)',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  maskSize: 'contain',
+                  WebkitMaskImage: 'url(/icon/douyin.svg)',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskSize: 'contain'
+                }} />
               </button>
               
               {/* 微信图标 */}

@@ -23,10 +23,10 @@ async function verifyAdminPermission(authHeader: string): Promise<{ isValid: boo
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const authHeader = request.headers.get('authorization')
     
     if (!authHeader) {

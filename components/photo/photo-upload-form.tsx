@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { useFormState } from "react-dom"
+import { useState, useRef, useEffect, useTransition } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,16 +36,13 @@ interface PhotoData {
   description: string
   tags: string[]
   category: string
-  file: File | null
+  files: File[]
   status?: ContentStatus
   location_name?: string
   visibility?: Visibility
 }
 
-const initialState: PhotoUploadState = {
-  message: "",
-  status: "idle",
-}
+
 
 export function PhotoUploadForm() {
   const [photoData, setPhotoData] = useState<PhotoData>({
@@ -53,93 +50,68 @@ export function PhotoUploadForm() {
     description: "",
     tags: [],
     category: "",
-    file: null,
+    files: [],
     status: "draft",
     location_name: "",
     visibility: "public",
   })
   const [tagInput, setTagInput] = useState("")
-  const [preview, setPreview] = useState<string | null>(null)
+  const [previews, setPreviews] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
+  const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const { toast } = useToast()
   const { userInfo } = useAuth()
   
-  const [state, formAction] = useFormState(submitPhotoData, initialState)
-  const [isPending, setIsPending] = useState(false)
+  const [isPending, startTransition] = useTransition()
   
-  // 处理Server Action的结果
-  useEffect(() => {
-    if (state.status === "success") {
-      setIsPending(false)
+
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
+    const imageFiles = files.filter(file => file.type.startsWith("image/"))
+    
+    if (imageFiles.length !== files.length) {
       toast({
-        title: "上传成功",
-        description: state.message,
-        duration: 2000,
-      })
-      // 重置表单
-      setPhotoData({
-        title: "",
-        description: "",
-        tags: [],
-        category: "",
-        file: null,
-        status: "draft",
-        location_name: "",
-        visibility: "public",
-      })
-      setPreview(null)
-      setUploadedFileUrl(null)
-      setUploadProgress(0)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
-      formRef.current?.reset()
-    } else if (state.status === "error") {
-      setIsPending(false)
-      toast({
-        title: "上传失败",
-        description: state.message,
+        title: "文件格式错误",
+        description: "请只选择图片文件",
         variant: "destructive",
         duration: 2000,
       })
     }
-  }, [state, toast])
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      if (file.type.startsWith("image/")) {
-        setPhotoData(prev => ({ ...prev, file }))
+    
+    if (imageFiles.length > 0) {
+      setPhotoData(prev => ({ ...prev, files: [...prev.files, ...imageFiles] }))
+      
+      // 生成预览
+      imageFiles.forEach(file => {
         const reader = new FileReader()
         reader.onload = (e) => {
-          setPreview(e.target?.result as string)
+          setPreviews(prev => [...prev, e.target?.result as string])
         }
         reader.readAsDataURL(file)
-      } else {
-        toast({
-          title: "文件格式错误",
-          description: "请选择图片文件",
-          variant: "destructive",
-          duration: 2000,
-        })
-      }
+      })
     }
   }
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
-    const file = event.dataTransfer.files[0]
-    if (file && file.type.startsWith("image/")) {
-      setPhotoData(prev => ({ ...prev, file }))
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+    const files = Array.from(event.dataTransfer.files)
+    const imageFiles = files.filter(file => file.type.startsWith("image/"))
+    
+    if (imageFiles.length > 0) {
+      setPhotoData(prev => ({ ...prev, files: [...prev.files, ...imageFiles] }))
+      
+      // 生成预览
+      imageFiles.forEach(file => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setPreviews(prev => [...prev, e.target?.result as string])
+        }
+        reader.readAsDataURL(file)
+      })
     }
   }
 
@@ -165,39 +137,49 @@ export function PhotoUploadForm() {
   }
 
   const handleFileUpload = async () => {
-    if (!photoData.file) return null
+    if (photoData.files.length === 0) return null
     
     setIsUploading(true)
     setUploadProgress(0)
     
     try {
-      const uploadFormData = new FormData()
-      uploadFormData.append('file', photoData.file)
-      
       const token = localStorage.getItem('access_token')
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: uploadFormData,
-      })
+      const uploadedUrls: string[] = []
+      
+      // 逐个上传文件
+      for (let i = 0; i < photoData.files.length; i++) {
+        const file = photoData.files[i]
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: uploadFormData,
+        })
 
-      if (!uploadResponse.ok) {
-        throw new Error('文件上传失败')
+        if (!uploadResponse.ok) {
+          throw new Error(`第${i + 1}个文件上传失败`)
+        }
+
+        const uploadResult = await uploadResponse.json()
+        uploadedUrls.push(uploadResult.url)
+        
+        // 更新进度
+        setUploadProgress(Math.round(((i + 1) / photoData.files.length) * 100))
       }
-
-      const uploadResult = await uploadResponse.json()
-      setUploadProgress(100)
-      setUploadedFileUrl(uploadResult.url)
+      
+      setUploadedFileUrls(uploadedUrls)
       
       toast({
         title: "文件上传成功",
-        description: "现在可以提交照片信息了",
+        description: `成功上传${uploadedUrls.length}张图片，现在可以提交照片信息了`,
         duration: 2000,
       })
       
-      return uploadResult
+      return { urls: uploadedUrls }
     } catch (error) {
       console.error('File upload failed:', error)
       toast({
@@ -216,7 +198,7 @@ export function PhotoUploadForm() {
     event.preventDefault()
     
     // 确保文件已上传
-    if (!uploadedFileUrl) {
+    if (uploadedFileUrls.length === 0) {
       toast({
         title: "请先上传文件",
         description: "请先点击'上传文件'按钮上传图片文件",
@@ -226,13 +208,51 @@ export function PhotoUploadForm() {
       return
     }
     
-    setIsPending(true)
-    try {
-      const formData = new FormData(event.currentTarget)
-      formAction(formData)
-    } finally {
-      // isPending will be reset when state changes in useEffect
-    }
+    startTransition(async () => {
+      try {
+        const formData = new FormData(event.currentTarget)
+        const result = await submitPhotoData(formData)
+        if (result.status === 'success') {
+          toast({
+            title: "上传成功",
+            description: result.message,
+            duration: 2000,
+          })
+          // 重置表单
+          setPhotoData({
+            title: "",
+            description: "",
+            tags: [],
+            category: "",
+            files: [],
+            status: "draft",
+            location_name: "",
+            visibility: "public",
+          })
+          setPreviews([])
+          setUploadedFileUrls([])
+          setUploadProgress(0)
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+          }
+          formRef.current?.reset()
+        } else {
+          toast({
+            title: "上传失败",
+            description: result.message,
+            variant: "destructive",
+            duration: 2000,
+          })
+        }
+      } catch (error) {
+        toast({
+          title: "上传失败",
+          description: error instanceof Error ? error.message : "未知错误",
+          variant: "destructive",
+          duration: 2000,
+        })
+      }
+    })
   }
 
   return (
@@ -246,16 +266,16 @@ export function PhotoUploadForm() {
           <input type="hidden" name="title" value={photoData.title} />
           <input type="hidden" name="description" value={photoData.description} />
           <input type="hidden" name="category" value={photoData.category} />
-          <input type="hidden" name="tags" value={photoData.tags.join(',')} />
+          <input type="hidden" name="tags" value={JSON.stringify(photoData.tags)} />
           <input type="hidden" name="status" value={photoData.status || 'draft'} />
           <input type="hidden" name="location_name" value={photoData.location_name || ''} />
           <input type="hidden" name="visibility" value={photoData.visibility || 'public'} />
           <input type="hidden" name="authToken" value={typeof window !== 'undefined' ? localStorage.getItem('access_token') || '' : ''} />
           <input type="hidden" name="userIsAdmin" value={userInfo?.is_admin ? 'true' : 'false'} />
-          {uploadedFileUrl && (
+          {uploadedFileUrls.length > 0 && (
             <>
-              <input type="hidden" name="fileUrl" value={uploadedFileUrl} />
-              <input type="hidden" name="fileFormat" value={photoData.file?.type.split('/')[1] || 'jpg'} />
+              <input type="hidden" name="url_list" value={JSON.stringify(uploadedFileUrls)} />
+              <input type="hidden" name="fileFormat" value={photoData.files[0]?.type.split('/')[1] || 'jpg'} />
             </>
           )}
           
@@ -268,31 +288,50 @@ export function PhotoUploadForm() {
               onDragOver={handleDragOver}
               onClick={() => fileInputRef.current?.click()}
             >
-              {preview ? (
-                <div className="relative">
-                  <Image
-                    src={preview}
-                    alt="预览"
-                    width={300}
-                    height={200}
-                    className="mx-auto rounded-lg object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
+              {previews.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {previews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <Image
+                        src={preview}
+                        alt={`预览 ${index + 1}`}
+                        width={200}
+                        height={150}
+                        className="rounded-lg object-cover w-full h-32"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const newPreviews = previews.filter((_, i) => i !== index)
+                          const newFiles = photoData.files.filter((_, i) => i !== index)
+                          setPreviews(newPreviews)
+                          setPhotoData(prev => ({ ...prev, files: newFiles }))
+                          if (newFiles.length === 0 && fileInputRef.current) {
+                            fileInputRef.current.value = ""
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  {/* 添加更多照片的按钮 */}
+                  <div 
+                    className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg h-32 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors bg-muted/20"
                     onClick={(e) => {
                       e.stopPropagation()
-                      setPreview(null)
-                      setPhotoData(prev => ({ ...prev, file: null }))
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = ""
-                      }
+                      fileInputRef.current?.click()
                     }}
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
+                    <div className="text-center">
+                      <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">添加更多</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -300,19 +339,20 @@ export function PhotoUploadForm() {
                     <Upload className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-lg font-medium">点击或拖拽上传照片</p>
-                    <p className="text-sm text-muted-foreground">支持 JPG、PNG、GIF 格式</p>
+                    <p className="text-lg font-medium">点击或拖拽上传照片（支持多选）</p>
+                    <p className="text-sm text-muted-foreground">支持 JPG、PNG、GIF 格式，可同时选择多张图片</p>
                   </div>
                 </div>
               )}
             </div>
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+             ref={fileInputRef}
+             type="file"
+             accept="image/*"
+             multiple
+             onChange={handleFileSelect}
+             className="hidden"
+           />
           </div>
 
           {/* 标题 */}
@@ -381,7 +421,7 @@ export function PhotoUploadForm() {
             {photoData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {photoData.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors">
                     {tag}
                     <button
                       type="button"
@@ -457,18 +497,18 @@ export function PhotoUploadForm() {
             )}
             
             {/* 文件上传成功状态 */}
-            {uploadedFileUrl && (
+            {uploadedFileUrls.length > 0 && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                 <div className="flex items-center text-green-700">
                   <Upload className="mr-2 h-4 w-4" />
-                  <span className="text-sm font-medium">文件已成功上传</span>
+                  <span className="text-sm font-medium">已成功上传{uploadedFileUrls.length}个文件</span>
                 </div>
                 <p className="text-xs text-green-600 mt-1">现在可以填写照片信息并提交</p>
               </div>
             )}
 
           {/* 文件上传按钮 */}
-          {photoData.file && !uploadedFileUrl && (
+          {photoData.files.length > 0 && uploadedFileUrls.length === 0 && (
             <Button 
               type="button" 
               onClick={handleFileUpload}
@@ -483,7 +523,7 @@ export function PhotoUploadForm() {
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  上传文件
+                  上传{photoData.files.length}个文件
                 </>
               )}
             </Button>
@@ -493,7 +533,7 @@ export function PhotoUploadForm() {
           <Button 
               type="submit" 
               className="w-full" 
-              disabled={isPending || isUploading || !uploadedFileUrl || !photoData.title || !photoData.category}
+              disabled={isPending || isUploading || uploadedFileUrls.length === 0 || !photoData.title || !photoData.category}
             >
               {isPending ? (
                 <>

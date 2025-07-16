@@ -1,14 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 启用实验性功能
-  experimental: {
-    // 启用 App Router
-    appDir: true,
-    // 启用服务器组件
-    serverComponentsExternalPackages: [],
-    // 启用并发功能
-    concurrentFeatures: true,
-  },
+  // 服务器外部包配置
+  serverExternalPackages: [],
 
   // 图片优化配置
   images: {

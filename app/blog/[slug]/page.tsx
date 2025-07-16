@@ -6,8 +6,9 @@ import { ArrowLeft, Calendar, Clock, Share2, ThumbsUp } from "lucide-react"
 import Image from "next/image"
 import { getBlogPostBySlug } from "@/lib/data"
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = getBlogPostBySlug(params.slug)
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const post = getBlogPostBySlug(slug)
 
   if (!post) {
     notFound()

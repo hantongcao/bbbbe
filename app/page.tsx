@@ -1,12 +1,87 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Rss } from "lucide-react"
-import { getRecentBlogPosts } from "@/lib/data"
 import { BlogPostCard } from "@/components/blog/blog-post-card"
+import { useState, useEffect } from "react"
+import type { BlogPost } from "@/lib/types"
+
+// API响应类型
+interface ApiBlog {
+  id: number
+  title: string
+  content: string
+  summary: string
+  status: string
+  visibility: string
+  tags: string[]
+  category: string
+  created_at: string
+  updated_at: string
+}
+
+interface ApiResponse {
+  items: ApiBlog[]
+  pagination: {
+    page: number
+    perPage: number
+    total: number
+    totalPage: number
+  }
+}
+
+// 将API数据转换为BlogPost格式
+const convertApiBlogToBlogPost = (apiBlog: ApiBlog): BlogPost => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const calculateReadTime = (content: string) => {
+    const wordsPerMinute = 200
+    const wordCount = content.length
+    const readTime = Math.ceil(wordCount / wordsPerMinute)
+    return `${readTime} 分钟阅读`
+  }
+
+  return {
+    slug: apiBlog.id.toString(),
+    title: apiBlog.title,
+    date: formatDate(apiBlog.created_at),
+    readTime: calculateReadTime(apiBlog.content),
+    excerpt: apiBlog.summary || apiBlog.content.substring(0, 150) + '...',
+    tags: apiBlog.tags,
+    category: apiBlog.category
+  }
+}
 
 export default function HomePage() {
-  const recentPosts = getRecentBlogPosts()
+  const [recentPosts, setRecentPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchRecentPosts = async () => {
+      try {
+        const response = await fetch('/api/blogs?page=1&perPage=3&watch=false')
+        if (response.ok) {
+          const data: ApiResponse = await response.json()
+          const convertedPosts = data.items.map(convertApiBlogToBlogPost)
+          setRecentPosts(convertedPosts)
+        }
+      } catch (error) {
+        console.error('获取近期文章失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRecentPosts()
+  }, [])
 
   return (
     <div className="animate-fade-in-up">
@@ -66,11 +141,24 @@ export default function HomePage() {
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {recentPosts.map((post) => (
-              <BlogPostCard key={post.slug} post={post} variant="compact" />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card border rounded-lg p-6 animate-pulse">
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-6 bg-muted rounded mb-4"></div>
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {recentPosts.map((post) => (
+                <BlogPostCard key={post.slug} post={post} variant="compact" />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

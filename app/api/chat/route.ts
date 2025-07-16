@@ -8,7 +8,8 @@ const eazytec = createOpenAI({
   baseURL: API_CONFIG.EAZYTEC_BASE_URL,
 })
 
-export const maxDuration = API_CONFIG.MAX_DURATION
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 export async function POST(req: Request) {
   const { messages } = await req.json()

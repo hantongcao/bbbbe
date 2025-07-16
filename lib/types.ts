@@ -15,6 +15,7 @@ export type BlogPost = {
 export type GalleryPost = {
   id: number
   src: string
+  srcList?: string[]
   alt: string
   title: string
   description: string

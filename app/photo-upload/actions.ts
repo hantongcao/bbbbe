@@ -4,7 +4,6 @@ import type { PhotoUploadState } from "@/lib/types"
 import { API_CONFIG } from "@/lib/config"
 
 export async function submitPhotoData(
-  prevState: PhotoUploadState,
   formData: FormData
 ): Promise<PhotoUploadState> {
   console.log("=== Server Action Called ===")
@@ -17,7 +16,7 @@ export async function submitPhotoData(
   const description = formData.get("description")
   const category = formData.get("category")
   const tags = formData.get("tags")
-  const fileUrl = formData.get("fileUrl")
+  const urlListStr = formData.get("url_list")
   const fileFormat = formData.get("fileFormat")
   const status = formData.get("status")
   const locationName = formData.get("location_name")
@@ -25,7 +24,18 @@ export async function submitPhotoData(
   const authToken = formData.get("authToken")
   const userIsAdmin = formData.get("userIsAdmin")
 
-  console.log("Extracted values:", { title, description, category, tags, fileUrl, fileFormat, status, locationName, visibility })
+  // 解析URL列表
+  let urlList: string[]
+  try {
+    urlList = JSON.parse(urlListStr as string)
+  } catch (error) {
+    return {
+      message: "URL列表格式错误",
+      status: "error",
+    }
+  }
+
+  console.log("Extracted values:", { title, description, category, tags, urlList, fileFormat, status, locationName, visibility })
 
   // 权限检查 - 仅限管理员
   if (!authToken) {
@@ -43,11 +53,22 @@ export async function submitPhotoData(
   }
 
   // Basic validation
-  if (!title || !category || !fileUrl) {
-    console.log("Validation failed:", { title: !!title, category: !!category, fileUrl: !!fileUrl })
+  if (!title || !category || !urlList || urlList.length === 0) {
+    console.log("Validation failed:", { title: !!title, category: !!category, urlList: !!urlList })
     return {
       message: "请填写标题、选择类型并上传图片。",
       status: "error",
+    }
+  }
+
+  // 解析tags列表
+  let parsedTags: string[] = []
+  if (tags) {
+    try {
+      parsedTags = JSON.parse(tags.toString())
+    } catch (error) {
+      // 如果JSON解析失败，尝试按逗号分割（向后兼容）
+      parsedTags = tags.toString().split(",").filter(tag => tag.trim())
     }
   }
 
@@ -55,12 +76,12 @@ export async function submitPhotoData(
     const submitData = {
       title: title.toString(),
       description: description?.toString() || "",
-      url: fileUrl.toString(),
+      url_list: urlList,
       format: fileFormat?.toString() || "jpg",
       location_name: locationName?.toString() || "",
-      status: status?.toString() || "published",
+      status: status?.toString() || "draft",
       visibility: visibility?.toString() || "public",
-      tags: tags ? tags.toString().split(",").filter(tag => tag.trim()) : [],
+      tags: parsedTags,
       category: category.toString(),
       taken_at: new Date().toISOString()
     }
