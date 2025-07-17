@@ -14,6 +14,7 @@ import { SITE_TITLE } from "@/lib/constants"
 const NAV_ITEMS = [
   { href: "/", label: "主页", requireAuth: false, requireAdmin: false },
   { href: "/blog", label: "博客", requireAuth: false, requireAdmin: false },
+  { href: "/blog-write", label: "写博客", requireAuth: true, requireAdmin: true },
   { href: "/gallery", label: "照片墙", requireAuth: false, requireAdmin: false },
   { href: "/photo-upload", label: "照片上传", requireAuth: true, requireAdmin: true },
   { href: "/ai-assistant", label: "AI 助手", requireAuth: false, requireAdmin: false },
@@ -31,10 +32,14 @@ type NavItem = {
 export function Header() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { isLoggedIn, userInfo } = useAuth()
+  const { isLoggedIn, userInfo, isLoading } = useAuth()
 
   // 根据登录状态和管理员权限过滤导航项
   const filteredNavItems = NAV_ITEMS.filter(item => {
+    // 如果正在加载认证状态，只显示不需要权限的项目，避免闪烁
+    if (isLoading) {
+      return !item.requireAuth && !item.requireAdmin
+    }
     if (item.requireAdmin) {
       return isLoggedIn && userInfo?.is_admin
     }

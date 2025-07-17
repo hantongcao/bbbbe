@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Calendar, Clock } from "lucide-react"
+import { ArrowRight, Calendar } from "lucide-react"
 import type { BlogPost } from "@/lib/types"
 
 interface BlogPostCardProps {
@@ -36,10 +36,6 @@ export function BlogPostCard({ post, variant = "full" }: BlogPostCardProps) {
           <div className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
             <span>{post.date}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
-            <span>{post.readTime}</span>
           </div>
         </div>
         <CardTitle className="text-2xl group-hover:text-primary transition-colors">

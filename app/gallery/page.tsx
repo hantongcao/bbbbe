@@ -10,7 +10,7 @@ import type { GalleryPost } from "@/lib/types"
 import { PageHeader } from "@/components/shared/page-header"
 import { GalleryLightbox } from "@/components/gallery/gallery-lightbox"
 import { useAuth } from "@/hooks/use-auth"
-import { ALL_GALLERY_POSTS } from "@/data/gallery"
+
 
 import { CATEGORY_LABELS } from "@/lib/photo-constants"
 
@@ -52,26 +52,7 @@ export default function GalleryPage() {
   const [autoSlideIntervals, setAutoSlideIntervals] = useState<{[key: number]: NodeJS.Timeout}>({})
   const { isLoggedIn, userInfo } = useAuth()
 
-  // 从本地数据获取照片
-  const fetchLocalPhotos = async (page: number) => {
-    try {
-      // 计算分页
-      const startIndex = (page - 1) * PHOTOS_PER_PAGE
-      const endIndex = startIndex + PHOTOS_PER_PAGE
-      const paginatedPosts = ALL_GALLERY_POSTS.slice(startIndex, endIndex)
-      
-      setPhotos(paginatedPosts)
-      setCurrentPage(page)
-      setTotalPages(Math.ceil(ALL_GALLERY_POSTS.length / PHOTOS_PER_PAGE))
-      setError(null)
-    } catch (err) {
-      console.error('加载本地数据失败:', err)
-      setPhotos([])
-      setCurrentPage(1)
-      setTotalPages(1)
-      setError('加载本地数据失败')
-    }
-  }
+
 
   // 从API获取照片数据
   const fetchPhotos = async (page: number) => {
@@ -113,9 +94,11 @@ export default function GalleryPage() {
       setTotalPages(data.pagination.totalPage)
       setError(null)
     } catch (err) {
-      console.warn('API请求失败，使用本地数据:', err)
-      // 当API不可用时，使用本地数据作为fallback
-      await fetchLocalPhotos(page)
+      console.error('API请求失败:', err)
+      setPhotos([])
+      setCurrentPage(1)
+      setTotalPages(1)
+      setError('加载照片数据失败')
     } finally {
       setLoading(false)
     }

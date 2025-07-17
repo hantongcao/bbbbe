@@ -109,7 +109,56 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') || ''
     const status = searchParams.get('status') || ''
 
-    // 过滤数据
+    // 尝试从外部API获取数据
+    try {
+      let externalApiUrl = `http://localhost:8000/v1/blogs?page=${page}&perPage=${perPage}`
+      
+      // 添加搜索参数
+      if (search && search.trim()) {
+        externalApiUrl += `&search=${encodeURIComponent(search.trim())}`
+      }
+      
+      // 添加分类筛选
+      if (category && category !== 'all') {
+        externalApiUrl += `&category=${category}`
+      }
+      
+      // 添加状态筛选
+      if (status && status !== 'all') {
+        externalApiUrl += `&status=${status}`
+      }
+
+      const response = await fetch(externalApiUrl, {
+        headers: {
+          'accept': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const externalData = await response.json()
+        
+        // 如果外部API返回的是数组格式，需要转换为我们期望的格式
+        if (Array.isArray(externalData)) {
+          const apiResponse = {
+            items: externalData,
+            pagination: {
+              page,
+              perPage,
+              total: externalData.length,
+              totalPage: Math.ceil(externalData.length / perPage)
+            }
+          }
+          return NextResponse.json(apiResponse)
+        }
+        
+        // 如果外部API已经返回了正确的格式，直接返回
+        return NextResponse.json(externalData)
+      }
+    } catch (externalError) {
+      console.error('从外部API获取数据失败，使用模拟数据:', externalError)
+    }
+
+    // 如果外部API失败，使用模拟数据作为后备
     let filteredBlogs = [...mockBlogs]
 
     // 搜索过滤

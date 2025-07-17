@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/shared/page-header"
 import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
+import { BLOG_CATEGORY_LABELS } from '@/lib/blog-constants'
 
 const POSTS_PER_PAGE = 4
 
@@ -41,14 +42,7 @@ interface ApiResponse {
   }
 }
 
-// 分类标签映射
-const CATEGORY_LABELS: { [key: string]: string } = {
-  'TECH': '技术',
-  'LIFE': '生活',
-  'STUDY': '学习',
-  'WORK': '工作',
-  'OTHER': '其他'
-}
+
 
 // 状态标签映射
 const STATUS_LABELS: { [key: string]: string } = {
@@ -72,7 +66,8 @@ export default function BlogPage() {
   const fetchBlogs = async (page: number, search?: string, category?: string, status?: string) => {
     setLoading(true)
     try {
-      let url = `/api/blogs?page=${page}&perPage=${POSTS_PER_PAGE}&watch=false`
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      let url = `${baseUrl}/api/blogs?page=${page}&perPage=${POSTS_PER_PAGE}&watch=false`
       
       // 添加搜索参数
       if (search && search.trim()) {
@@ -172,6 +167,11 @@ export default function BlogPage() {
     return isLoggedIn && userInfo && userInfo.is_admin
   }
 
+  // 编辑博客 - 跳转到编辑页面
+  const handleEditBlog = (blogId: number) => {
+    window.location.href = `/blog-edit/${blogId}`
+  }
+
   return (
     <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 flex flex-col min-h-[calc(100vh-14rem)] animate-fade-in-up">
       <div className="mb-12">
@@ -200,7 +200,7 @@ export default function BlogPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">所有分类</SelectItem>
-              {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+              {Object.entries(BLOG_CATEGORY_LABELS).map(([key, label]) => (
                 <SelectItem key={key} value={key}>{label}</SelectItem>
               ))}
             </SelectContent>
@@ -256,6 +256,7 @@ export default function BlogPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleEditBlog(blog.id)}
                         className="text-primary hover:text-primary hover:bg-primary/10 border-primary/20 hover:border-primary/30 transition-colors"
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -284,7 +285,7 @@ export default function BlogPage() {
                     <div className="flex items-center gap-2">
                       <FolderOpen className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">分类:</span>
-                      <span className="text-sm text-primary font-bold">{CATEGORY_LABELS[blog.category] || blog.category}</span>
+                      <span className="text-sm text-primary font-bold">{BLOG_CATEGORY_LABELS[blog.category] || blog.category}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">状态:</span>

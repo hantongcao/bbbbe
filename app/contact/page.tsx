@@ -1,8 +1,34 @@
-import { getContactInfo } from "@/lib/data"
 import { ContactForm } from "@/components/contact/contact-form"
+import { Mail, Phone, MapPin, Github } from "lucide-react"
+import type { ContactInfo } from "@/lib/types"
 
 export default function ContactPage() {
-  const contactInfo = getContactInfo()
+  const contactInfo: ContactInfo[] = [
+    {
+      icon: Mail,
+      label: "邮箱",
+      value: "your.email@example.com",
+      href: "mailto:your.email@example.com"
+    },
+    {
+      icon: Phone,
+      label: "电话",
+      value: "+86 138 0000 0000",
+      href: "tel:+8613800000000"
+    },
+    {
+      icon: MapPin,
+      label: "位置",
+      value: "中国，北京",
+      href: "#"
+    },
+    {
+      icon: Github,
+      label: "GitHub",
+      value: "github.com/yourusername",
+      href: "https://github.com/yourusername"
+    }
+  ]
 
   return (
     <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 animate-fade-in-up">

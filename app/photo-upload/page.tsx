@@ -21,7 +21,6 @@ export default function PhotoUploadPage() {
         return
       }
       if (!userInfo?.is_admin) {
-        setShowContent(true)
         return
       }
       setShowContent(true)

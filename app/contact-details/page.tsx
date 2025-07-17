@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
 import { LoginDialog } from '@/components/auth/login-dialog'
+import { useAuth } from '@/hooks/use-auth'
+import { useRouter } from 'next/navigation'
 
 import { Loader2, Mail, User, MessageSquare, Calendar, Search, X, Trash2, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 
@@ -31,6 +33,8 @@ interface ContactResponse {
 }
 
 export default function ContactDetailsPage() {
+  const { isLoggedIn, userInfo, isLoading } = useAuth()
+  const router = useRouter()
   const [contacts, setContacts] = useState<ContactItem[]>([])
   const [pagination, setPagination] = useState({
     page: 1,
@@ -43,9 +47,7 @@ export default function ContactDetailsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [showContent, setShowContent] = useState(false)
 
   const fetchContacts = async (page: number = 1, search: string = '') => {
     try {
@@ -79,42 +81,26 @@ export default function ContactDetailsPage() {
     }
   }
 
-  // 检查登录状态和管理员权限
+  // 权限验证和内容显示控制
   useEffect(() => {
-    const checkLoginStatus = () => {
-      const token = localStorage.getItem('access_token')
-      const userInfoStr = localStorage.getItem('user_info')
-      
-      if (token && userInfoStr) {
-        try {
-          const user = JSON.parse(userInfoStr)
-          setIsLoggedIn(true)
-          setIsAdmin(user.is_admin === true)
-        } catch (error) {
-          // 清除无效的存储数据
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('user_info')
-          setIsLoggedIn(false)
-          setIsAdmin(false)
-        }
-      } else {
-        setIsLoggedIn(false)
-        setIsAdmin(false)
+    if (!isLoading) {
+      if (!isLoggedIn) {
+        router.push('/')
+        return
       }
-      setCheckingAuth(false)
+      if (!userInfo?.is_admin) {
+        return
+      }
+      setShowContent(true)
     }
-    
-    checkLoginStatus()
-  }, [])
+  }, [isLoggedIn, userInfo, isLoading, router])
 
-  // 只有在登录状态确认且用户已登录且是管理员时才获取联系信息
+  // 只有在权限验证通过后才获取联系信息
   useEffect(() => {
-    if (!checkingAuth && isLoggedIn && isAdmin) {
+    if (showContent) {
       fetchContacts(1, searchQuery)
-    } else if (!checkingAuth && (!isLoggedIn || !isAdmin)) {
-      setLoading(false)
     }
-  }, [checkingAuth, isLoggedIn, isAdmin])
+  }, [showContent])
 
   const handleSearch = () => {
     setIsSearching(true)
@@ -225,21 +211,27 @@ export default function ContactDetailsPage() {
     })
   }
 
-  if (checkingAuth || loading) {
+  // 如果正在加载认证状态，显示加载状态
+  if (isLoading) {
     return (
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex items-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-lg text-primary">{checkingAuth ? '验证登录状态...' : '加载中...'}</span>
+            <span className="text-lg text-primary">验证登录状态...</span>
           </div>
         </div>
       </div>
     )
   }
 
-  // 如果用户未登录或不是管理员，显示权限提示页面
-  if (!isLoggedIn || !isAdmin) {
+  // 如果用户未登录，返回null（会被重定向）
+  if (!isLoggedIn) {
+    return null
+  }
+
+  // 如果用户不是管理员，显示权限不足页面
+  if (!userInfo?.is_admin) {
     return (
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -250,21 +242,30 @@ export default function ContactDetailsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-primary">
-                {!isLoggedIn ? '需要登录访问' : '需要管理员权限'}
-              </h1>
+              <h1 className="text-2xl font-bold text-primary">需要管理员权限</h1>
               <p className="text-muted-foreground max-w-md">
-                {!isLoggedIn 
-                  ? '联系详情页面需要管理员权限才能访问。请先登录您的账户。'
-                  : '此页面仅限管理员访问。如果您认为这是错误，请联系系统管理员。'
-                }
+                此页面仅限管理员访问。如果您认为这是错误，请联系系统管理员。
               </p>
             </div>
-            {!isLoggedIn && (
-              <div className="flex justify-center">
-                <LoginDialog />
-              </div>
-            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 如果还没有显示内容权限，返回null
+  if (!showContent) {
+    return null
+  }
+
+  // 如果正在加载数据，显示加载状态
+  if (loading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-lg text-primary">加载中...</span>
           </div>
         </div>
       </div>

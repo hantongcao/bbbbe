@@ -24,42 +24,40 @@ export function useAuth() {
   const [userInfo, setUserInfo] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    // 防抖函数，避免频繁的状态检查
-    let timeoutId: NodeJS.Timeout
+  // 初始化时立即检查认证状态
+  const initializeAuth = () => {
+    if (typeof window === 'undefined') return
     
-    const checkAuthStatus = () => {
-      // 确保在客户端环境下执行
-      if (typeof window === 'undefined') return
+    try {
+      const token = localStorage.getItem('access_token')
+      const userInfoStr = localStorage.getItem('user_info')
       
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        try {
-          const token = localStorage.getItem('access_token')
-          const userInfoStr = localStorage.getItem('user_info')
-          
-          if (token && userInfoStr) {
-            const user = JSON.parse(userInfoStr)
-            setIsLoggedIn(true)
-            setUserInfo(user)
-          } else {
-            setIsLoggedIn(false)
-            setUserInfo(null)
-          }
-        } catch (error) {
-          console.error('Error checking auth status:', error)
-          // 清除无效的存储数据
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('user_info')
-          setIsLoggedIn(false)
-          setUserInfo(null)
-        } finally {
-          setIsLoading(false)
-        }
-      }, 10) // 10ms 防抖延迟
+      if (token && userInfoStr) {
+        const user = JSON.parse(userInfoStr)
+        setIsLoggedIn(true)
+        setUserInfo(user)
+      } else {
+        setIsLoggedIn(false)
+        setUserInfo(null)
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error)
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('user_info')
+      setIsLoggedIn(false)
+      setUserInfo(null)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    checkAuthStatus()
+  useEffect(() => {
+    // 立即初始化认证状态
+    initializeAuth()
+
+    const checkAuthStatus = () => {
+      initializeAuth()
+    }
 
     // 监听storage事件，当其他标签页登录/退出时同步状态
     const handleStorageChange = (e: StorageEvent) => {
@@ -77,7 +75,6 @@ export function useAuth() {
     window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
     
     return () => {
-      clearTimeout(timeoutId)
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
     }

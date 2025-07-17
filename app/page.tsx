@@ -7,6 +7,7 @@ import { ArrowRight, Rss } from "lucide-react"
 import { BlogPostCard } from "@/components/blog/blog-post-card"
 import { useState, useEffect } from "react"
 import type { BlogPost } from "@/lib/types"
+import { BLOG_CATEGORIES, type BlogCategory } from "@/lib/blog-constants"
 
 // API响应类型
 interface ApiBlog {
@@ -49,6 +50,14 @@ const convertApiBlogToBlogPost = (apiBlog: ApiBlog): BlogPost => {
     return `${readTime} 分钟阅读`
   }
 
+  // 将API返回的category字符串转换为BlogCategory类型
+  const mapCategory = (category: string): BlogCategory => {
+    const upperCategory = category.toUpperCase()
+    return Object.values(BLOG_CATEGORIES).includes(upperCategory as BlogCategory) 
+      ? upperCategory as BlogCategory 
+      : BLOG_CATEGORIES.TECH // 默认值
+  }
+
   return {
     slug: apiBlog.id.toString(),
     title: apiBlog.title,
@@ -56,7 +65,7 @@ const convertApiBlogToBlogPost = (apiBlog: ApiBlog): BlogPost => {
     readTime: calculateReadTime(apiBlog.content),
     excerpt: apiBlog.summary || apiBlog.content.substring(0, 150) + '...',
     tags: apiBlog.tags,
-    category: apiBlog.category
+    category: mapCategory(apiBlog.category)
   }
 }
 
@@ -67,7 +76,8 @@ export default function HomePage() {
   useEffect(() => {
     const fetchRecentPosts = async () => {
       try {
-        const response = await fetch('/api/blogs?page=1&perPage=3&watch=false')
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        const response = await fetch(`${baseUrl}/api/blogs?page=1&perPage=3&watch=false`)
         if (response.ok) {
           const data: ApiResponse = await response.json()
           const convertedPosts = data.items.map(convertApiBlogToBlogPost)

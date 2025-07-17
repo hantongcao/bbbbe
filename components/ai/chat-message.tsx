@@ -33,7 +33,21 @@ export const ChatMessage = memo(({ message }: ChatMessageProps) => {
           isUser ? "bg-muted" : "bg-primary/10",
         )}
       >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+        <ReactMarkdown 
+          remarkPlugins={[remarkGfm]}
+          components={{
+            td: ({ vAlign, ...props }: any) => {
+              const { vAlign: _, ...restProps } = props
+              return <td {...restProps} />
+            },
+            th: ({ vAlign, ...props }: any) => {
+              const { vAlign: _, ...restProps } = props
+              return <th {...restProps} />
+            }
+          }}
+        >
+          {message.content}
+        </ReactMarkdown>
       </div>
 
       {isUser && (

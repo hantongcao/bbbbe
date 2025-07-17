@@ -1,4 +1,5 @@
 import type React from "react"
+import type { BlogCategory } from './blog-constants'
 
 export type BlogPost = {
   slug: string
@@ -7,7 +8,7 @@ export type BlogPost = {
   readTime: string
   excerpt: string
   tags: string[]
-  category?: string
+  category: BlogCategory
   imageUrl?: string
   content?: string
 }
