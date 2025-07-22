@@ -10,6 +10,7 @@ import type { GalleryPost } from "@/lib/types"
 import { PageHeader } from "@/components/shared/page-header"
 import { GalleryLightbox } from "@/components/gallery/gallery-lightbox"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 
 
 import { CATEGORY_LABELS } from "@/lib/photo-constants"
@@ -51,6 +52,7 @@ export default function GalleryPage() {
   const [currentImageIndexes, setCurrentImageIndexes] = useState<{[key: number]: number}>({})
   const [autoSlideIntervals, setAutoSlideIntervals] = useState<{[key: number]: NodeJS.Timeout}>({})
   const { isLoggedIn, userInfo } = useAuth()
+  const router = useRouter()
 
 
 
@@ -162,7 +164,8 @@ export default function GalleryPage() {
 
   // 编辑照片 - 跳转到编辑页面
   const handleEditPhoto = (photoId: number) => {
-    window.location.href = `/photo-edit/${photoId}`
+    // 使用 Next.js 路由进行跳转
+    router.push(`/photo-edit/${photoId}`)
   }
 
   // 检查当前用户是否可以编辑/删除照片 - 仅限管理员

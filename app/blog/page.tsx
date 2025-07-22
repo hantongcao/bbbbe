@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/shared/page-header"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { BLOG_CATEGORY_LABELS } from '@/lib/blog-constants'
 
@@ -61,6 +62,7 @@ export default function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const { isLoggedIn, userInfo } = useAuth()
+  const router = useRouter()
 
   // 从API获取博客数据
   const fetchBlogs = async (page: number, search?: string, category?: string, status?: string) => {
@@ -169,7 +171,37 @@ export default function BlogPage() {
 
   // 编辑博客 - 跳转到编辑页面
   const handleEditBlog = (blogId: number) => {
-    window.location.href = `/blog-edit/${blogId}`
+    // 使用 Next.js 路由进行跳转
+    router.push(`/blog-edit/${blogId}`)
+  }
+
+  // 删除博客
+  const handleDeleteBlog = async (blogId: number) => {
+    if (!confirm('确定要删除这篇博客吗？此操作不可撤销。')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`/api/blogs/${blogId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        // 重新获取当前页面的博客列表
+        fetchBlogs(currentPage, searchTerm, selectedCategory, selectedStatus)
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || '删除失败，请重试')
+      }
+    } catch (error) {
+      console.error('删除博客失败:', error)
+      alert('删除失败，请重试')
+    }
   }
 
   return (
@@ -247,7 +279,7 @@ export default function BlogPage() {
                 <div className="flex items-start justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
-                    <Link href={`/blog/${blog.id}`} className="hover:text-primary transition-colors">
+                    <Link href={`/blog/${blog.id}`} prefetch={false} className="hover:text-primary transition-colors">
                       {blog.title}
                     </Link>
                   </CardTitle>
@@ -265,7 +297,8 @@ export default function BlogPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-primary hover:text-primary hover:bg-primary/10 border-primary/20 hover:border-primary/30 transition-colors"
+                        onClick={() => handleDeleteBlog(blog.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 transition-colors"
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
                         删除
